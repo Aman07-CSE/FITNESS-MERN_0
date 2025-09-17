@@ -123,59 +123,60 @@ const AuthPopup: React.FC<AuthPopupProps> = ({ setShowpopup }) => {
 
 
 
-    const handleLogin = () => {
-        console.log(loginformData);
+    const handleLogin = async () => {
+        if (!loginformData.email || !loginformData.password) {
+            toast.error('Please fill in all fields');
+            return;
+        }
 
-        fetch(process.env.NEXT_PUBLIC_BACKEND_API + '/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(loginformData),
-            credentials: 'include'
-        })
-        .then(res => res.json())
-            .then(data => {
-                console.log(data)
-
-                if (data.ok) {
-                    toast.success(data.message)
-
-                    setShowpopup(false)
-                }
-                else {
-                    toast.error(data.message)
-                }
-            }).catch(err => {
-                console.log(err)
-            })
+        try {
+            const url = `${process.env.NEXT_PUBLIC_BACKEND_API}/auth/login`;
+            console.log('Login request URL:', url);
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(loginformData),
+                credentials: 'include'
+            });
+            const data = await res.json();
+            console.log('Login response:', res.status, data);
+            if (data.ok) {
+                toast.success(data.message);
+                setShowpopup(false);
+            } else {
+                toast.error(data.message || 'Login failed');
+            }
+        } catch (err) {
+            console.error('Login fetch error:', err);
+            toast.error('Network error during login');
+        }
     }
     const handleSignup = () => {
         // console.log(process.env.NEXT_PUBLIC_BACKEND_API);
 
-        fetch(process.env.NEXT_PUBLIC_BACKEND_API + '/auth/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(signupformData),
-            credentials: 'include'
-        })
-            .then(res => res.json())
-            .then(data => {
-                console.log(data)
-
+        (async () => {
+            try {
+                const url = `${process.env.NEXT_PUBLIC_BACKEND_API}/auth/register`;
+                console.log('Signup request URL:', url, 'payload:', signupformData);
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(signupformData),
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                console.log('Signup response:', res.status, data);
                 if (data.ok) {
-                    toast.success(data.message)
-
-                    setShowSignup(false)
+                    toast.success(data.message);
+                    setShowSignup(false);
+                } else {
+                    toast.error(data.message || 'Signup failed');
                 }
-                else {
-                    toast.error(data.message)
-                }
-            }).catch(err => {
-                console.log(err)
-            })
+            } catch (err) {
+                console.error('Signup fetch error:', err);
+                toast.error('Network error during signup');
+            }
+        })();
     }
     return (
         <div className='popup'>

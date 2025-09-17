@@ -4,10 +4,9 @@ const User = require('../Models/UserSchema')
 const errorHandler = require('../Middlewares/errorMiddleware');
 const authTokenHandler = require('../Middlewares/checkAuthToken');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 
-//ardo snju okez dpwp
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -34,14 +33,20 @@ router.post('/register', async (req, res, next) => {
     console.log(req.body);
     try {
         const { name, email, password, weightInKg, heightInCm, gender, dob, goal, activityLevel } = req.body;
+        if(!email || !password || !name || !weightInKg || !heightInCm || !gender || !dob || !goal || !activityLevel) {
+            return res.status(400).json(createResponse(false, 'All fields are required'));
+        }
         const existingUser = await User.findOne({ email: email });
 
         if (existingUser) {
             return res.status(409).json(createResponse(false, 'Email already exists'));
         }
+
+        const salt= await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
         const newUser = new User({
             name,
-            password,
+            password: hashedPassword,
             email,
             weight: [
                 {
@@ -74,6 +79,9 @@ router.post('/register', async (req, res, next) => {
 router.post('/login', async (req, res, next) => {
     try {
         const { email, password } = req.body;
+        if(!email || !password) {
+            return res.status(400).json(createResponse(false, 'Email and password are required'));
+        }
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json(createResponse(false, 'Invalid credentials'));
@@ -103,7 +111,7 @@ router.post('/sendotp', async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000);
 
         const mailOptions = {
-            from: 'virajj014@gmail.com',
+            from: 'amancode03@gmail.com',
             to: email,
             subject: 'OTP for verification',
             text: `Your OTP is ${otp}`
